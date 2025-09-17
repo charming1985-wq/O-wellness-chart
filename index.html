@@ -1,0 +1,2154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- BUILD:v4.4.5 moved stats to 통계 only + SOAP Progress Notes -->
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>웰니스 차트 — 측정/통계 · SOAP 진행노트 · v4.4.5</title>
+
+<!-- 외부 라이브러리 (원하면 로컬 번들로 교체 가능) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+:root{--bg:#F8F4ED;--text:#2F2F2F;--accent:#00B2A9;--hi:#CDE000;--muted:#6c757d;--card:#fff;--border:#e9ecef;--soft:#f8f9fa;}
+*{box-sizing:border-box}
+html,body{height:100%}
+html{scroll-behavior:smooth;}
+body{margin:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--text)}
+.header{display:flex;gap:16px;align-items:center;max-width:1200px;margin:24px auto 0;padding:16px 24px;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border-radius:16px}
+.logo{width:40px;height:40px;border-radius:8px;background-color:#fff;padding:6px;border:1px solid rgba(255,255,255,.3);box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;font-weight:bold;color:#4facfe;}
+.title h1{margin:0;font-size:1.4rem}
+.title p{margin:4px 0 0;opacity:.9}
+main{max-width:1200px;margin:16px auto;padding:16px}
+.card{background:var(--card);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:24px;margin-bottom:16px;border:1px solid var(--border)}
+.hidden{display:none!important}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:8px}
+label{font-weight:600}
+input,select,textarea{border:2px solid var(--border);border-radius:10px;padding:12px;font-size:1rem;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#4facfe}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;justify-content:center}
+.btn{border:none;border-radius:999px;padding:12px 20px;background:var(--soft);cursor:pointer;font-weight:700;transition:transform .2s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff}
+.btn-secondary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-success{background:linear-gradient(135deg,#00b894,#00a085);color:#fff}
+.btn-warning{background:linear-gradient(135deg,#e17055,#d63031);color:#fff}
+.btn-info{background:linear-gradient(135deg,#00B2A9,#008E86);color:#fff}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:12px;background:var(--soft);border-radius:12px}
+.label{color:var(--muted);font-weight:600;margin-right:8px}
+.accent{color:#4facfe}
+.progress-wrap{display:flex;align-items:center;gap:12px;margin-top:8px}
+.progress{flex:1;height:10px;background:#dee2e6;border-radius:6px;overflow:hidden}
+.progress>#progressFill{height:100%;width:0;background:linear-gradient(90deg,#4facfe,#00f2fe);transition:width .3s ease}
+.muted{color:var(--muted)}
+.categories{display:grid;gap:16px}
+.category{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.category-header{color:#fff;padding:14px;font-weight:700}
+.questions{padding:16px}
+.question{margin-bottom:14px;padding:12px;background:var(--soft);border-left:4px solid #4facfe;border-radius:8px}
+.question-text{font-weight:600;margin-bottom:10px}
+.rating-scale{display:flex;gap:10px;flex-wrap:wrap}
+.rating-option{display:flex;align-items:center;gap:4px;padding:8px 12px;border:2px solid var(--border);border-radius:20px;background:#fff;cursor:pointer;transition:all .2s}
+.rating-option:hover{border-color:#4facfe}
+.rating-option.selected{background:#4facfe;color:#fff;border-color:#4facfe}
+.rating-guide{display:flex;justify-content:space-between;margin-top:8px;padding:6px 10px;background:#e3f2fd;border-radius:6px;font-size:.85rem;color:#1976d2}
+.category-score{background:#e8f5e8;color:#2e7d32;padding:12px;text-align:center;font-weight:700;border-top:1px solid var(--border)}
+.results-header{text-align:center}
+.tile{background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;padding:16px;border-radius:12px;margin:12px auto;max-width:480px}
+.score-xl{font-size:2.2rem;font-weight:800}
+.panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.details{display:grid;gap:10px}
+.detail{display:flex;justify-content:space-between;align-items:center;background:var(--soft);padding:10px;border-radius:8px}
+.detail strong{color:#495057}
+.detail span{color:#4facfe;font-weight:700}
+.scores-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.score-card{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:14px}
+.score-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.score-title{font-weight:600;font-size:.9rem}
+.score-number{background:#e9ecef;padding:8px 12px;border-radius:8px;font-weight:800}
+.score-bar{width:100%;height:8px;background:#dee2e6;border-radius:4px;overflow:hidden}
+.score-fill{height:100%;transition:width .3s ease}
+.footer{max-width:1200px;margin:12px auto 24px;padding:8px 16px;color:#fff;display:flex;justify-content:space-between;align-items:center}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* 로그인 카드 */
+#loginSection.card{max-width:420px;margin:40px auto;padding:28px 24px;background:#fff;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.08)}
+#loginSection .section-title{text-align:center;margin-bottom:24px;font-size:1.5rem;font-weight:700;color:#333}
+#loginSection details{margin-top:16px;border:1px solid var(--border);border-radius:8px;padding:12px}
+#loginSection details summary{cursor:pointer;font-weight:600;padding:8px}
+
+/* 상단 네비 */
+.topnav{max-width:1200px;margin:10px auto 0;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;background:var(--soft);border:1px solid var(--border);border-radius:12px;position:sticky;top:10px;z-index:100}
+.topnav .nav-left,.topnav .nav-right{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 플로팅 진행률 */
+.floating-progress{position:fixed;top:20px;right:20px;z-index:1000;background:rgba(255,255,255,.95);border-radius:12px;padding:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);backdrop-filter:blur(10px)}
+.progress-circle{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(#4facfe 0deg,#e9ecef 0deg);margin:0 auto 8px}
+.progress-number{font-size:12px;font-weight:700;color:#333}
+.progress-label{text-align:center;font-size:11px;color:#666;font-weight:600}
+@media (max-width:768px){.floating-progress{top:10px;right:10px;padding:8px}.progress-circle{width:40px;height:40px}.rating-scale{justify-content:center}.rating-option{min-width:40px;justify-content:center}}
+
+/* 프린트 */
+@media print{ @page{size:A4 portrait;margin:10mm} body{background:#fff!important} .header,.footer,.actions,.topnav,.floating-progress,.debug-info{display:none!important} .card{box-shadow:none;border:1px solid #ccc;} }
+
+/* 디버그 */
+.debug-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,.8);color:#fff;padding:8px;border-radius:4px;font-size:12px;z-index:1001;max-width:300px}
+
+#resultsSection.hidden #baselineBar{display:none!important}
+
+/* 로그인 뷰에서 결과/진행 UI 강제 비표시 */
+body[data-view="login"] #topNav,
+body[data-view="login"] #baselineBar,
+body[data-view="login"] #progressSection,
+body[data-view="login"] #resultsSection,
+body[data-view="login"] .baseline-dropdown {
+  display: none !important;
+}
+
+/* SOAP Notes 스타일 */
+.soap-tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--border)}
+.soap-tab{padding:12px 24px;border:none;background:transparent;cursor:pointer;font-weight:600;border-bottom:3px solid transparent;transition:all .2s}
+.soap-tab.active{color:#4facfe;border-bottom-color:#4facfe}
+.soap-content{min-height:200px}
+.soap-section{display:none}
+.soap-section.active{display:block}
+.soap-textarea{width:100%;min-height:150px;border:2px solid var(--border);border-radius:10px;padding:16px;font-size:1rem;font-family:inherit;resize:vertical}
+.note-card{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.note-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.note-date{font-weight:600;color:#4facfe}
+.note-actions{display:flex;gap:8px}
+.note-content{white-space:pre-wrap;line-height:1.6}
+.soap-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.soap-summary-item{background:var(--soft);border-left:4px solid #4facfe;padding:12px;border-radius:8px}
+.soap-summary-title{font-weight:600;color:#4facfe;font-size:.9rem}
+.template-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.template-btn{padding:6px 12px;border:1px solid var(--border);border-radius:20px;background:var(--soft);cursor:pointer;font-size:.85rem;transition:all .2s}
+.template-btn:hover{background:#4facfe;color:#fff}
+
+/* 신체 정보 필드 정렬 수정 */
+.vitals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:end}
+@media (max-width:768px){.vitals-grid{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<header class="header" role="banner">
+  <div class="logo">W</div>
+  <div class="title">
+    <h1>오 웰니스 체크 시스템</h1>
+    <p>12개 카테고리 종합 평가 · 레이더 차트 · 회원별 추이 · SOAP 진행노트 · v4.4.5</p>
+  </div>
+</header>
+
+<nav class="topnav hidden" id="topNav" aria-label="주요 메뉴">
+  <div class="nav-left">
+    <button class="btn btn-secondary" onclick="navTo('measurement')">측정</button>
+    <button class="btn btn-secondary" id="progressNav" onclick="navTo('progress')">통계</button>
+    <button class="btn btn-secondary" onclick="navTo('notes')">진행노트</button>
+ <div class="nav-right">
+  <!-- 파란색 -->
+  <button class="btn btn-primary" onclick="downloadCombinedResults()">결과 이미지 다운로드</button>
+
+  <!-- 티얼색 -->
+  <button class="btn btn-info" onclick="exportData()">JSON 내보내기</button>
+
+  <!-- 초록색  -->
+  <button class="btn btn-success" onclick="exportCSVMenu()">CSV 내보내기</button>
+
+  <!-- 주황색 -->
+  <button class="btn btn-warning" onclick="triggerCSVImport()">CSV 가져오기</button>
+
+  <input id="csvInput" type="file" accept=".csv,text/csv" class="hidden" onchange="handleCSVFile(this.files[0])"/>
+  <button class="btn btn-warning" onclick="logout()">로그아웃</button>
+</div>
+</nav>
+
+<main>
+  <!-- 로그인 -->
+  <section class="card" id="loginSection">
+    <div class="panel">
+      <h2 class="section-title">코치 로그인</h2>
+      <div class="form-group">
+        <label for="loginCoachName">코치 이름</label>
+        <input id="loginCoachName" placeholder="예) 홍길동" type="text"/>
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">비밀번호</label>
+        <input id="loginPassword" placeholder="비밀번호" type="password"/>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="handleLogin()">로그인</button>
+      </div>
+
+      <details>
+        <summary><strong>신규 코치 등록</strong></summary>
+        <div class="form-group"><label for="registerCoachName">코치 이름</label><input id="registerCoachName" type="text"/></div>
+        <div class="form-group"><label for="registerPassword">비밀번호</label><input id="registerPassword" type="password"/></div>
+        <div class="form-group"><label for="confirmPassword">비밀번호 확인</label><input id="confirmPassword" type="password"/></div>
+        <div class="actions"><button class="btn btn-success" onclick="handleRegister()">등록</button></div>
+      </details>
+      <p class="muted" style="margin-top:8px">팁: 코치 이름을 <strong>master</strong>로 등록/로그인하면 모든 코치 데이터를 대시보드에서 볼 수 있습니다.</p>
+    </div>
+  </section>
+
+  <!-- SOAP 진행노트 섹션 -->
+  <section class="card hidden" id="notesSection">
+    <div class="bar">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <div><span class="label">코치</span> <strong class="accent" id="notesCoachLabel">-</strong></div>
+        <div><span class="label">회원</span> <strong class="accent" id="notesClientLabel">선택하세요</strong></div>
+      </div>
+      <div class="actions" style="margin:0">
+        <input id="notesClientSearch" list="notesClientList" placeholder="회원 이름 검색" oninput="renderNotes(this.value)"/>
+        <datalist id="notesClientList"></datalist>
+      </div>
+    </div>
+
+    <!-- 새 SOAP 노트 작성 -->
+    <div class="panel" id="soapWritePanel">
+      <h3>새 진행노트 작성 (SOAP)</h3>
+      
+      <!-- SOAP 탭 -->
+      <div class="soap-tabs">
+        <button class="soap-tab active" onclick="switchSoapTab('subjective')">S - 주관적</button>
+        <button class="soap-tab" onclick="switchSoapTab('objective')">O - 객관적</button>
+        <button class="soap-tab" onclick="switchSoapTab('assessment')">A - 평가</button>
+        <button class="soap-tab" onclick="switchSoapTab('plan')">P - 계획</button>
+      </div>
+
+      <div class="soap-content">
+        <!-- Subjective -->
+        <div class="soap-section active" id="subjective-section">
+          <div class="template-buttons">
+            <button class="template-btn" onclick="addTemplate('subjective', '- 피로감 증가\n- 수면 질 저하\n- 식욕 변화')">일반 증상</button>
+            <button class="template-btn" onclick="addTemplate('subjective', '- 운동 시 숨찬 증상\n- 관절 통증\n- 근육 경직감')">운동 관련</button>
+            <button class="template-btn" onclick="addTemplate('subjective', '- 목표: 체중 5kg 감량\n- 우선순위: 근력 향상\n- 관심사: 균형 잡힌 식단')">목표</button>
+          </div>
+          <textarea class="soap-textarea" id="subjectiveText" placeholder="회원이 호소하는 주관적 증상, 목표, 상태를 기록하세요...&#10;예: 최근 허리 통증이 심해졌다고 함, 체중 감량 목표, 운동 의욕 증가"></textarea>
+        </div>
+
+        <!-- Objective -->
+        <div class="soap-section" id="objective-section">
+          <div class="template-buttons">
+            <button class="template-btn" onclick="loadObjectiveData()">측정 데이터 불러오기</button>
+            <button class="template-btn" onclick="addTemplate('objective', '체중: kg\n혈압: mmHg\n심박수: bpm\n체지방률: %')">기본 수치</button>
+            <button class="template-btn" onclick="addTemplate('objective', '운동량: 분/주\n근력 테스트: \n유연성 평가: \n균형감각: ')">운동 평가</button>
+          </div>
+          <textarea class="soap-textarea" id="objectiveText" placeholder="측정된 객관적 데이터를 기록하세요...&#10;예: BMI 24.5, RHR 68bpm, 웰니스 점수 220/300, 스쿼트 15회 가능"></textarea>
+        </div>
+
+        <!-- Assessment -->
+        <div class="soap-section" id="assessment-section">
+          <div class="template-buttons">
+            <button class="template-btn" onclick="addTemplate('assessment', '개선사항:\n- \n\n우려사항:\n- \n\n전반적 상태: ')">종합 평가</button>
+            <button class="template-btn" onclick="addTemplate('assessment', '강점:\n- \n\n약점:\n- \n\n위험요소:\n- ')">강약점 분석</button>
+            <button class="template-btn" onclick="addTemplate('assessment', '이전 대비 변화:\n- 개선: \n- 정체: \n- 악화: ')">진전도 평가</button>
+          </div>
+          <textarea class="soap-textarea" id="assessmentText" placeholder="코치의 전문적 평가와 분석을 기록하세요...&#10;예: 전반적인 체력 향상, 하지만 심혈관 지구력 부족, 식습관 개선 필요"></textarea>
+        </div>
+
+        <!-- Plan -->
+        <div class="soap-section" id="plan-section">
+          <div class="template-buttons">
+            <button class="template-btn" onclick="addTemplate('plan', '단기 목표 (1-2주):\n- \n\n중기 목표 (1-3개월):\n- \n\n장기 목표 (6개월+):\n- ')">목표 설정</button>
+            <button class="template-btn" onclick="addTemplate('plan', '운동 계획:\n- 빈도: 주 회\n- 강도: \n- 종류: \n\n영양 계획:\n- \n\n생활습관:\n- ')">상세 계획</button>
+            <button class="template-btn" onclick="addTemplate('plan', '다음 평가일: \n특별 주의사항: \n추천 전문의 상담: \n기타: ')">후속 조치</button>
+          </div>
+          <textarea class="soap-textarea" id="planText" placeholder="향후 운동 계획, 생활습관 개선안, 재평가 일정 등을 기록하세요...&#10;예: 주 3회 유산소 운동, 단백질 섭취 증가, 2주 후 재평가"></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-success" onclick="saveSoapNoteUI()">진행노트 저장</button>
+        <button class="btn" onclick="clearSoapForm()">초기화</button>
+      </div>
+    </div>
+
+    <!-- SOAP 노트 목록 -->
+    <div class="panel">
+      <h3>진행노트 히스토리</h3>
+      <div id="soapNotesList"></div>
+    </div>
+  </section>
+
+  <!-- 진행(통계) 전용 섹션: v4.4.4 이동 -->
+  <section class="card hidden" id="progressSection">
+
+    <div class="bar">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <div><span class="label">코치</span> <strong class="accent" id="progressCoachLabel">-</strong></div>
+        <div><span class="label">회원</span> <strong class="accent" id="progressClientLabel">선택하세요</strong></div>
+      </div>
+      <div class="actions" style="margin:0">
+        <input id="progressClientSearch" list="progressClientList" placeholder="회원 이름 검색" oninput="renderProgress(this.value)"/>
+        <datalist id="progressClientList"></datalist>
+      </div>
+    </div>
+
+    <div class="bar">
+      <div class="label">필터</div>
+      <div class="actions" style="margin:0">
+        <button class="btn" onclick="setProgressRange(7)">최근 7일</button>
+        <button class="btn" onclick="setProgressRange(30)">최근 30일</button>
+        <button class="btn" onclick="setProgressRange(90)">최근 90일</button>
+        <label class="rating-option" style="margin-left:8px">
+          <input type="checkbox" id="ma3" onchange="renderProgress(currentProgressClient)"/>
+          <span>3회 이동평균</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>점수 변화 추이</h3>
+        <div style="position:relative;height:280px"><canvas id="totalTrendChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>최신 카테고리 점수</h3>
+        <div style="position:relative;height:280px"><canvas id="latestCategoryChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>측정 통계</h3>
+      <div class="details" id="progressStats"></div>
+    </div>
+
+    <div class="panel">
+      <h3>측정 히스토리</h3>
+      <table class="table" style="width:100%;border-collapse:separate;border-spacing:0 8px">
+        <thead><tr><th>날짜</th><th>점수</th><th>체중(kg)</th><th>RHR(bpm)</th><th>메모</th></tr></thead>
+        <tbody id="historyTbody"></tbody>
+      </table>
+    </div>
+  
+    <div class="panel">
+      <h3>회원 스파크라인 (최근 8회)</h3>
+      <div id="sparklineWrap" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"></div>
+    </div>
+
+    <div class="panel hidden" id="importPreviewPanel" aria-live="polite">
+      <h3>CSV 미리보기</h3>
+      <div id="importPreview" class="details"></div>
+      <div class="actions">
+        <button class="btn btn-success" onclick="confirmImportCSV()">복원 저장</button>
+        <button class="btn btn-warning" onclick="cancelImportCSV()">취소</button>
+      </div>
+    </div>
+  
+  </section>
+
+
+  <section class="card hidden" id="infoSection">
+    <!-- v4.4.4: 통계 대시보드는 #progressSection으로 이동되었습니다. -->
+  </section>
+
+  <!-- 평가 섹션 -->
+  <section class="card hidden" id="assessmentSection">
+    <div class="bar">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <div><span class="label">코치</span> <strong class="accent" id="currentCoachName">-</strong></div>
+        <div><span class="label">측정일</span> <input type="date" id="measurementDate" style="border:none;background:transparent;color:#4facfe;font-weight:700"/></div>
+      </div>
+      <div class="actions" style="margin:0">
+        <button class="btn btn-success" onclick="handleSave()">저장</button>
+        <button class="btn btn-warning" onclick="resetAll()">초기화</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>기본 정보</h3>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="clientName">회원 이름</label>
+            <input id="clientName" placeholder="홍길동" list="clientSuggestions" oninput="handleClientTyping(this.value)"/>
+            <datalist id="clientSuggestions"></datalist>
+          </div>
+          <div class="form-group">
+            <label for="memberNumber">회원번호</label>
+            <input id="memberNumber" placeholder="12345"/>
+          </div>
+        </div>
+        <div class="grid-3">
+          <div class="form-group">
+            <label for="gender">성별</label>
+            <select id="gender"><option value="">선택</option><option value="남성">남성</option><option value="여성">여성</option><option value="기타">기타</option></select>
+          </div>
+          <div class="form-group">
+            <label for="age">나이</label>
+            <input id="age" type="number" placeholder="25" min="1" max="120"/>
+          </div>
+          <div class="form-group">
+            <label for="phone">전화번호</label>
+            <input id="phone" placeholder="010-1234-5678"/>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>신체 정보</h3>
+        <div class="vitals-grid">
+          <div class="form-group">
+            <label for="heightCm">키 (cm)</label>
+            <input id="heightCm" type="number" placeholder="170" min="100" max="250"/>
+          </div>
+          <div class="form-group">
+            <label for="weightKg">체중 (kg)</label>
+            <input id="weightKg" type="number" placeholder="70" min="20" max="200" step="0.1"/>
+          </div>
+          <div class="form-group">
+            <label for="rhr">안정시 심박수 (bpm)</label>
+            <input id="rhr" type="number" placeholder="60" min="30" max="150"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="goalNote">목표/메모</label>
+          <input id="goalNote" placeholder="건강한 체중 감량, 근력 향상 등"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- 목표/메모 전용 패널 (기본/신체 정보 아래) -->
+    <div class="panel" id="goalMemoPanel">
+      <h3>목표/메모</h3>
+      <div class="form-group">
+        <label for="goalMemo">회원 목표 / 코치 메모</label>
+        <textarea id="goalMemo" rows="4" placeholder="예) 체지방 3kg 감량, 주 2회 근력, 유산소 150분, 수면 루틴 개선" style="width:100%;border:2px solid var(--border);border-radius:10px;padding:12px;font-size:1rem;"></textarea>
+      </div>
+    </div>
+
+    <!-- 신체 정보 시각화 (BMI / 심박수 Zone) -->
+    <div class="panel" id="vitalsPanel">
+      <h3>신체 지표 시각화</h3>
+      <div class="grid-2">
+        <!-- BMI 카드 -->
+        <div class="score-card">
+          <div class="score-header">
+            <div class="score-title">BMI</div>
+            <div class="score-number" id="bmiValue">-</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px" class="muted">
+            <span>저체중&lt;18.5</span><span>·</span><span>정상 18.5—24.9</span><span>·</span><span>과체중 25—29.9</span><span>·</span><span>비만 ≥30</span>
+          </div>
+          <div class="score-bar" style="position:relative;height:10px;">
+            <div style="display:flex;width:100%;height:100%;">
+              <div style="flex:18.5;background:#cfe8ff"></div>
+              <div style="flex:6.5;background:#b8f2e6"></div>
+              <div style="flex:5.0;background:#ffe08a"></div>
+              <div style="flex:10;background:#ffc9c9"></div>
+            </div>
+            <div id="bmiMarker" style="position:absolute;top:-3px;left:0;width:0;height:16px;border-left:3px solid #4facfe;"></div>
+          </div>
+          <div class="muted" id="bmiCategory" style="margin-top:6px">-</div>
+        </div>
+
+        <!-- Heart Rate Zones 카드 -->
+        <div class="score-card">
+          <div class="score-header">
+            <div class="score-title">심박수 Zones (HRR 기반)</div>
+            <div class="score-number" id="mhrRhrLabel">-</div>
+          </div>
+          <div class="muted" style="margin-bottom:8px">Zone1 50—60% · Zone2 60—70% · Zone3 70—80%</div>
+          <div id="zoneBar" style="display:flex;width:100%;height:10px;border-radius:4px;overflow:hidden;background:#dee2e6">
+            <div id="zone1Seg" style="width:33.333%;background:#d0ebff"></div>
+            <div id="zone2Seg" style="width:33.333%;background:#b2f2bb"></div>
+            <div id="zone3Seg" style="width:33.333%;background:#ffe8a1"></div>
+          </div>
+          <div class="details" style="margin-top:8px">
+            <div class="detail"><strong>Zone 1</strong><span id="z1Range">-</span></div>
+            <div class="detail"><strong>Zone 2</strong><span id="z2Range">-</span></div>
+            <div class="detail"><strong>Zone 3</strong><span id="z3Range">-</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel"><h3>웰니스 평가</h3>
+      <div class="progress-wrap">
+        <div class="progress"><div id="progressFill"></div></div>
+        <div id="progressText" class="muted">응답률 0%</div>
+      </div>
+      <div class="categories" id="categoriesContainer"></div>
+    </div>
+  </section>
+
+  <!-- 결과 섹션 -->
+  <section class="card hidden" id="resultsSection">
+    <div class="results-header">
+      <div class="tile">
+        <div class="score-xl" id="finalTotalScore">0/300</div>
+        <div>총 웰니스 점수</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel" id="resultRadarPanel">
+        <h3>레이더 차트</h3>
+        <div style="position:relative;height:320px"><canvas id="radarChart"></canvas></div>
+      </div>
+      <div class="panel" id="resultInfoPanel">
+        <h3>측정 정보</h3>
+        <div class="details" id="clientDetails"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="resultCategoryPanel">
+      <h3>카테고리별 상세 점수</h3>
+      <div class="scores-grid" id="scoresList"></div>
+    </div>
+
+    <div class="panel" id="resultsTrendPanel">
+      <h3>개인 점수 추이 (최근 8회)</h3>
+      <div style="position:relative;height:280px"><canvas id="miniTrendChart"></canvas></div>
+      
+      <!-- 측정 화면 네비게이션 -->
+      <div style="margin-top: 20px; padding: 16px; background: linear-gradient(135deg, #e3f2fd, #f3e5f5); border-radius: 12px; border: 1px solid #e1bee7;">
+        <div class="actions" style="justify-content: center; flex-wrap: wrap; gap: 12px; margin: 0;">
+          <button class="btn btn-secondary" onclick="navTo('progress')" style="min-width: 100px;">
+            📈 상세 분석
+          </button>
+          <button class="btn btn-secondary" onclick="navTo('notes')" style="min-width: 100px;">
+            📝 진행노트
+          </button>
+          <button class="btn btn-primary" onclick="downloadImage()" style="min-width: 100px;">
+            🖼️ 결과 이미지 다운로드
+          </button>
+          <button class="btn btn-success" onclick="exportCSVMenu()" style="min-width: 100px;">
+            📊 CSV
+          </button>
+          <button class="btn" onclick="resetAll()" style="min-width: 100px;">
+            🔄 새 측정
+          </button>
+        </div>
+        <p style="text-align: center; margin: 8px 0 0 0; color: #7b1fa2; font-size: 0.85rem;">
+          상세한 변화 추이는 '상세 분석'에서, 진행노트는 '진행노트'에서 확인하세요
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <small>© O! Wellness. 로컬 브라우저 저장(IndexedDB) 사용. · v4.4.5</small>
+  <small>made by O!wellness</small>
+</footer>
+
+<!-- 디버그 (선택 표시) -->
+<div class="debug-info" id="debugInfo" style="display:none;">
+  <div>DB 상태: <span id="dbStatus">초기화 중...</span></div>
+  <div>앱 상태: <span id="appStatus">로딩 중...</span></div>
+  <div>오류: <span id="errorStatus">없음</span></div>
+</div>
+
+<script>
+// ========================
+// 상수 & 전역
+// ========================
+const QUESTIONS_PER_CAT=5, MAX_PER_CAT=25;
+const DB_NAME='Owellness';
+const DB_VERSION=5; // SOAP 노트 추가로 버전 업
+let currentCoach=null, currentView='login', _db=null;
+let radarChart=null, totalTrendChart=null, latestCategoryChart=null, miniTrendChart=null;
+
+const categories=[
+  {
+    "name":"움직임",
+    "shortLabel":"움직임",
+    "questions":[
+      "주 150분 이상 유산소 활동을 한다.",
+      "주 2회 이상 근력 운동을 한다.",
+      "균형 운동과 스트레칭의 의미를 알고 있다.",
+      "운동 전후 내 몸의 상태 변화를 확인한다.",
+      "좌식 생활의 유해함을 알고 막기 위해 노력한다."
+    ],
+    "color":"#FF6B6B"
+  },
+  {
+    "name":"식사와 영양",
+    "shortLabel":"식사 & 영양",
+    "questions":[
+      "하루에 과일 4가지 이상, 채소 5가지 이상을 먹는다.",
+      "단백질·탄수화물·지방이 몸에 어떤 역할을 하는지 알고 있다.",
+      "내가 먹는 음식·제품의 영양 성분표를 확인한다.",
+      "하루 두 끼 이상 단백질 식품을 포함한다.",
+      "음식을 연료로, 약으로 그리고 즐거움으로 여긴다."
+    ],
+    "color":"#4ECDC4"
+  },
+  {
+    "name":"수면",
+    "shortLabel":"수면",
+    "questions":[
+      "밤에 7–9시간 규칙적으로 잔다.",
+      "수면 부족과 위생이 건강에 미치는 영향을 알고 있다.",
+      "정오 이후에는 카페인을 마시지 않는다.",
+      "자기 전 30분은 휴대폰을 멀리한다.",
+      "아침에 일어났을 때 내 몸의 회복감을 점검한다."
+    ],
+    "color":"#45B7D1"
+  },
+  {
+    "name":"스트레스 & 회복",
+    "shortLabel":"스트레스",
+    "questions":[
+      "스트레스가 몸과 마음에 나타나는 신호를 알아차린다.",
+      "스트레스 완화 방법의 중요성을 알고 실천하고 있다.",
+      "스트레스가 몸과 마음에 미치는 영향을 알고 있다.",
+      "회복과 충전을 위한 공간과 시간을 추구한다.",
+      "하루에 한 번 이상 몸/마음의 긴장을 풀기 위한 루틴을 실천한다."
+    ],
+    "color":"#96CEB4"
+  },
+  {
+    "name":"관계성",
+    "shortLabel":"관계",
+    "questions":[
+      "나를 지지해주는 사람이 누구인지 알고 있다.",
+      "그룹 활동(운동, 취미, 종교, 봉사 등)에 참여하고 있다.",
+      "건전한 사회적 연결이 건강에 중요한 이유를 알고 있다.",
+      "주 5회 이상 가족·지인과 연락하거나 만난다.",
+      "매일 돌봄 활동을 하는 대상이 있다.(반려 동물, 식물 등)"
+    ],
+    "color":"#FFEAA7"
+  },
+  {
+    "name":"목표 & 의미",
+    "shortLabel":"목표 & 의미",
+    "questions":[
+      "연간·분기 목표를 세우고 점검한다.",
+      "내가 중요하게 생각하는 가치가 무엇인지 알고 있다.",
+      "목표를 세우는 것의 가치를 알고 있다.",
+      "하루 목표를 세우고 확인한다.",
+      "내가 하는 일이 내 가치와 연결된다고 느낀다."
+    ],
+    "color":"#DDA0DD"
+  },
+  {
+    "name":"태도 & 에너지",
+    "shortLabel":"태도 & 에너지",
+    "questions":[
+      "하루에 한 번 내가 잘한 일을 떠올린다.",
+      "힘든 순간 긍정적인 말을 스스로 한다.",
+      "긍정적인 태도가 건강과 행동 변화에 주는 영향을 알고 있다.",
+      "하루 30분 이상 나를 기분 좋게 하는 활동을 한다.",
+      "에너지를 소모하는 습관이나 사람을 줄인다."
+    ],
+    "color":"#74B9FF"
+  },
+  {
+    "name":"안전 & 유해 습관 줄이기",
+    "shortLabel":"안전",
+    "questions":[
+      "흡연·전자담배를 하지 않는다.",
+      "음주 횟수를 주 2회 이하로 유지한다.",
+      "술·카페인·약물 등이 몸에 미치는 영향을 알고 있다.",
+      "안전과 회복력을 점검하고 개선하려 노력한다.",
+      "문제 습관과 행동에 대해 인식하고 있다."
+    ],
+    "color":"#FD79A8"
+  }
+];
+
+// ========================
+// 유틸
+// ========================
+const esc=(s)=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+const show=(el)=>el&&el.classList.remove('hidden');
+const hide=(el)=>el&&el.classList.add('hidden');
+function adjustColor(hex,percent){const num=parseInt(hex.replace('#',''),16);const amt=Math.round(2.55*percent);const R=(num>>16)+amt,G=(num>>8&255)+amt,B=(num&255)+amt;const clamp=v=>v<0?0:v>255?255:v;return'#'+((1<<24)+(clamp(R)<<16)+(clamp(G)<<8)+(clamp(B))).toString(16).slice(1);}
+function updateDebugInfo(db,app,err='없음'){const a=document.getElementById('dbStatus'),b=document.getElementById('appStatus'),c=document.getElementById('errorStatus'); if(a)a.textContent=db; if(b)b.textContent=app; if(c)c.textContent=err;}
+
+// ========================
+// IndexedDB
+// ========================
+async function initDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=(e)=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('coaches')){
+        const s=db.createObjectStore('coaches',{keyPath:'name'}); s.createIndex('name','name',{unique:true});
+      }
+      if(!db.objectStoreNames.contains('records')){
+        const s=db.createObjectStore('records',{keyPath:'id',autoIncrement:true});
+        s.createIndex('byCoach','coachName');
+        s.createIndex('byClient','clientName');
+        s.createIndex('byCoachClientDate',['coachName','clientName','date']);
+      }
+      if(!db.objectStoreNames.contains('clients')){
+        const s=db.createObjectStore('clients',{keyPath:'key'});
+        s.createIndex('byCoach','coachName');
+        s.createIndex('byCoachClient',['coachName','clientName'],{unique:true});
+        s.createIndex('byName','clientName');
+      }
+      if(!db.objectStoreNames.contains('drafts')){
+        const s=db.createObjectStore('drafts',{keyPath:'key'});
+        s.createIndex('byCoach','key');
+      }
+      // SOAP Notes 추가
+      if(!db.objectStoreNames.contains('soapNotes')){
+        const s=db.createObjectStore('soapNotes',{keyPath:'id',autoIncrement:true});
+        s.createIndex('byCoach','coachName');
+        s.createIndex('byClient','clientName');
+        s.createIndex('byCoachClient',['coachName','clientName']);
+        s.createIndex('byDate','date');
+      }
+    }; req.onsuccess=()=>{_db=req.result;resolve(_db)};
+    req.onerror=()=>reject(req.error);
+  });
+}
+
+async function sha256(str){const enc=new TextEncoder().encode(str);const buf=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+const randSalt=()=>Math.random().toString(36).slice(2)+crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
+
+// coaches
+async function getCoach(name){if(!_db)await initDB();return new Promise((res,rej)=>{const tx=_db.transaction('coaches','readonly');const st=tx.objectStore('coaches');const r=st.get(name);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error);});}
+async function registerCoach(name,password){if(!_db)await initDB(); if(await getCoach(name)) throw new Error('이미 존재하는 코치 이름입니다.'); const salt=randSalt(); const pwHash=await sha256(password+salt); return new Promise((res,rej)=>{const tx=_db.transaction('coaches','readwrite');const st=tx.objectStore('coaches');const r=st.put({name,salt,pwHash,registeredDate:new Date().toISOString()});r.onsuccess=()=>res(true);r.onerror=()=>rej(r.error);});}
+async function authCoach(name,password){const c=await getCoach(name); if(!c) return null; const ok=(await sha256(password+c.salt))===c.pwHash; return ok?c:null;}
+
+// clients
+const clientKey=(coach,client)=>`${coach}|${client}`;
+async function upsertClient(coachName, profile){
+  if(!_db) await initDB();
+  return new Promise((res, rej) => {
+    const tx = _db.transaction('clients', 'readwrite');
+    const st = tx.objectStore('clients');
+    const key = clientKey(coachName, profile.clientName);
+
+    const get = st.get(key);
+    get.onsuccess = () => {
+      const prev = get.result || {
+        key,
+        coachName,
+        clientName: profile.clientName,
+        createdAt: new Date().toISOString()
+      };
+
+      const next = {
+        ...prev, // 중요: 스프레드 문법 (...prev)
+        memberNumber: profile.memberNumber || prev.memberNumber || '',
+        gender:       profile.gender       || prev.gender       || '',
+        age:          profile.age          || prev.age          || '',
+        phone:        profile.phone        || prev.phone        || '',
+        heightCm:     profile.heightCm     || prev.heightCm     || '',
+        // ⬇️ 새 필드 병합 (누락 방지)
+        weightKg:     profile.weightKg     || prev.weightKg     || '',
+        rhr:          profile.rhr          || prev.rhr          || '',
+        updatedAt: new Date().toISOString()
+      };
+
+      const put = st.put(next);
+      put.onsuccess = () => res(next);
+      put.onerror  = () => rej(put.error);
+    };
+    get.onerror = () => rej(get.error);
+  });
+}
+async function fetchClientsByCoach(coachName){
+  if(!_db)await initDB();
+  return new Promise((res,rej)=>{
+    const out=[]; const tx=_db.transaction('clients','readonly'); const idx=tx.objectStore('clients').index('byCoach');
+    const req=idx.openCursor(IDBKeyRange.only(coachName));
+    req.onsuccess=()=>{const cur=req.result; if(cur){out.push(cur.value); cur.continue();} else res(out);};
+    req.onerror=()=>rej(req.error);
+  });
+}
+
+// records
+async function saveRecord(rec){
+  if(!_db)await initDB();
+  return new Promise((res,rej)=>{
+    const tx=_db.transaction('records','readwrite');const st=tx.objectStore('records');
+    const r = st.put({ ...rec, schema: 2, savedAt: new Date().toISOString() });
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  });
+}
+async function fetchRecords(coachName,clientName){
+  if(!_db)await initDB();
+  return new Promise((res,rej)=>{
+    const out=[]; const tx=_db.transaction('records','readonly'); const idx=tx.objectStore('records').index('byCoachClientDate');
+    const range=IDBKeyRange.bound([coachName,clientName,''],[coachName,clientName,'\uFFFF']);
+    const req=idx.openCursor(range);
+    req.onsuccess=()=>{const cur=req.result; if(cur){out.push(cur.value); cur.continue();} else{out.sort((a,b)=>a.date.localeCompare(b.date)); res(out);} };
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function fetchCoachAllRecords(coachName){
+  if(!_db)await initDB();
+  return new Promise((res,rej)=>{
+    const out=[]; const tx=_db.transaction('records','readonly'); const idx=tx.objectStore('records').index('byCoach');
+    const req=idx.openCursor(IDBKeyRange.only(coachName));
+    req.onsuccess=()=>{const cur=req.result; if(cur){out.push(cur.value); cur.continue();} else res(out);};
+    req.onerror=()=>rej(req.error);
+  });
+}
+
+// SOAP Notes - 데이터베이스 함수들
+async function saveSoapNoteDB(note){
+  if(!_db)await initDB();
+  return new Promise((res,rej)=>{
+    const tx=_db.transaction('soapNotes','readwrite');
+    const st=tx.objectStore('soapNotes');
+    const r=st.put({...note,savedAt:new Date().toISOString()});
+    r.onsuccess=()=>res(r.result); 
+    r.onerror=()=>rej(r.error);
+  });
+}
+
+async function fetchSoapNotes(coachName,clientName){
+  if(!_db)await initDB();
+  return new Promise((res,rej)=>{
+    const out=[]; 
+    const tx=_db.transaction('soapNotes','readonly'); 
+    const idx=tx.objectStore('soapNotes').index('byCoachClient');
+    const range=IDBKeyRange.only([coachName,clientName]);
+    const req=idx.openCursor(range);
+    req.onsuccess=()=>{
+      const cur=req.result; 
+      if(cur){
+        out.push(cur.value); 
+        cur.continue();
+      } else {
+        out.sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime()); // 최신순
+        res(out);
+      }
+    };
+    req.onerror=()=>rej(req.error);
+  });
+}
+
+// ========================
+// 렌더/UI
+// ========================
+function navTo(view){
+  document.body.dataset.view = view;
+  currentView=view;
+  ['loginSection','infoSection','assessmentSection','resultsSection','progressSection','notesSection'].forEach(id=>hide(document.getElementById(id)));
+  const topNav=document.getElementById('topNav');
+
+  if(view==='login'){ 
+    show(document.getElementById('loginSection')); 
+    hide(topNav); 
+    hideFloatingProgress(); 
+    return; 
+  }
+  if(!currentCoach){ navTo('login'); return; }
+
+  show(topNav);
+  if(view==='measurement'){ 
+    loadDraft().then(d=>{ if(d && confirm('작성 중이던 임시 저장 내용이 있습니다. 복구할까요?')){ fillForm(d); } });
+    show(document.getElementById('infoSection'));
+    show(document.getElementById('assessmentSection'));
+    show(document.getElementById('resultsSection'));
+    updateResults(); 
+    showFloatingProgress();
+  }else if(view==='progress'){ 
+    show(document.getElementById('progressSection'));
+    hideFloatingProgress();
+    populateProgressClientList();
+    renderSparklines();
+    const name=document.getElementById('clientName')?.value?.trim() || document.getElementById('progressClientSearch')?.value?.trim() || '';
+    if(name) {
+      document.getElementById('progressClientSearch').value = name;
+      renderProgress(name);
+    } else {
+      renderProgress('');
+    }
+  }else if(view==='notes'){
+    show(document.getElementById('notesSection'));
+    hideFloatingProgress();
+    populateNotesClientList();
+    const name=document.getElementById('clientName')?.value?.trim() || document.getElementById('notesClientSearch')?.value?.trim() || '';
+    if(name) {
+      document.getElementById('notesClientSearch').value = name;
+      renderNotes(name);
+    } else {
+      renderNotes('');
+    }
+    document.getElementById('notesCoachLabel').textContent = currentCoach?.name || '-';
+  }
+}
+
+// SOAP Notes UI 함수들
+function switchSoapTab(section) {
+  // 탭 활성화 상태 변경
+  document.querySelectorAll('.soap-tab').forEach(tab => tab.classList.remove('active'));
+  document.querySelector(`.soap-tab[onclick="switchSoapTab('${section}')"]`).classList.add('active');
+  
+  // 섹션 표시/숨김
+  document.querySelectorAll('.soap-section').forEach(sec => sec.classList.remove('active'));
+  document.getElementById(`${section}-section`).classList.add('active');
+}
+
+function addTemplate(section, text) {
+  const textarea = document.getElementById(`${section}Text`);
+  if (textarea.value.trim()) {
+    textarea.value += '\n\n' + text;
+  } else {
+    textarea.value = text;
+  }
+  textarea.focus();
+}
+
+function loadObjectiveData() {
+  const clientName = document.getElementById('clientName')?.value || document.getElementById('notesClientSearch')?.value || '';
+  if (!clientName) {
+    alert('먼저 회원을 선택해주세요.');
+    return;
+  }
+  
+  // 현재 측정 데이터 가져오기
+  const height = document.getElementById('heightCm')?.value;
+  const weight = document.getElementById('weightKg')?.value;
+  const rhr = document.getElementById('rhr')?.value;
+  const age = document.getElementById('age')?.value;
+  
+  let objectiveData = `측정일: ${new Date().toLocaleDateString('ko-KR')}\n`;
+  objectiveData += `회원: ${clientName}\n`;
+  
+  if (height && weight) {
+    const bmi = (parseFloat(weight) / Math.pow(parseFloat(height)/100, 2)).toFixed(1);
+    objectiveData += `신장: ${height}cm, 체중: ${weight}kg, BMI: ${bmi}\n`;
+  }
+  
+  if (rhr) {
+    objectiveData += `안정시 심박수: ${rhr}bpm\n`;
+  }
+  
+  if (age && rhr) {
+    const mhr = 220 - parseInt(age);
+    const hrr = mhr - parseInt(rhr);
+    objectiveData += `최대심박수: ${mhr}bpm, 심박수 예비량: ${hrr}bpm\n`;
+  }
+  
+  // 웰니스 점수가 있다면 추가
+  const {total} = computeScores();
+  if (total > 0) {
+    objectiveData += `웰니스 점수: ${total}/300\n`;
+  }
+  
+  objectiveData += '\n[추가 측정 데이터]\n체지방률: %\n근육량: kg\n혈압: / mmHg\n기타: ';
+  
+  document.getElementById('objectiveText').value = objectiveData;
+}
+
+async function saveSoapNoteUI() {
+  if (!currentCoach) {
+    alert('로그인이 필요합니다.');
+    return;
+  }
+  
+  const clientName = document.getElementById('notesClientSearch').value.trim();
+  if (!clientName) {
+    alert('회원을 먼저 선택해주세요.');
+    return;
+  }
+  
+  const subjective = document.getElementById('subjectiveText').value.trim();
+  const objective = document.getElementById('objectiveText').value.trim();
+  const assessment = document.getElementById('assessmentText').value.trim();
+  const plan = document.getElementById('planText').value.trim();
+  
+  if (!subjective && !objective && !assessment && !plan) {
+    alert('최소 한 개 항목은 입력해주세요.');
+    return;
+  }
+  
+  const note = {
+    date: new Date().toISOString(),
+    coachName: currentCoach.name,
+    clientName,
+    subjective,
+    objective,
+    assessment,
+    plan
+  };
+  
+  try {
+    await saveSoapNoteDB(note);
+    alert('진행노트가 저장되었습니다.');
+    clearSoapForm();
+    renderNotes(clientName);
+  } catch (e) {
+    console.error(e);
+    alert('저장 중 오류가 발생했습니다.\n' + (e?.message || e));
+  }
+}
+
+function clearSoapForm() {
+  document.getElementById('subjectiveText').value = '';
+  document.getElementById('objectiveText').value = '';
+  document.getElementById('assessmentText').value = '';
+  document.getElementById('planText').value = '';
+  switchSoapTab('subjective');
+}
+
+async function populateNotesClientList() {
+  const list = await fetchClientsByCoach(currentCoach?.name || '');
+  const dl = document.getElementById('notesClientList');
+  if (!dl) return;
+  dl.innerHTML = list
+    .sort((a,b)=>a.clientName.localeCompare(b.clientName,'ko'))
+    .map(c=>`<option value="${c.clientName}"></option>`).join('');
+}
+
+async function renderNotes(clientName) {
+  const clientLabel = document.getElementById('notesClientLabel');
+  const notesList = document.getElementById('soapNotesList');
+  
+  if (!currentCoach) return;
+  
+  if (!clientName) {
+    clientLabel.textContent = '회원 선택 후 확인';
+    if (notesList) notesList.innerHTML = '<p class="muted">회원을 선택하면 진행노트 히스토리를 확인할 수 있습니다.</p>';
+    return;
+  }
+  
+  clientLabel.textContent = clientName;
+  
+  try {
+    const notes = await fetchSoapNotes(currentCoach.name, clientName);
+    
+    if (!notes.length) {
+      notesList.innerHTML = '<p class="muted">저장된 진행노트가 없습니다.</p>';
+      return;
+    }
+    
+    const notesHtml = notes.map(note => `
+      <div class="note-card">
+        <div class="note-header">
+          <div class="note-date">${new Date(note.date).toLocaleString('ko-KR')}</div>
+          <div class="note-actions">
+            <button class="btn" style="padding:4px 8px;font-size:0.8rem" onclick="editSoapNote(${note.id})">수정</button>
+            <button class="btn btn-warning" style="padding:4px 8px;font-size:0.8rem" onclick="deleteSoapNote(${note.id})">삭제</button>
+          </div>
+        </div>
+        <div class="soap-summary">
+          ${note.subjective ? `<div class="soap-summary-item"><div class="soap-summary-title">S - 주관적</div><div class="note-content">${esc(note.subjective.slice(0, 100))}${note.subjective.length > 100 ? '...' : ''}</div></div>` : ''}
+          ${note.objective ? `<div class="soap-summary-item"><div class="soap-summary-title">O - 객관적</div><div class="note-content">${esc(note.objective.slice(0, 100))}${note.objective.length > 100 ? '...' : ''}</div></div>` : ''}
+          ${note.assessment ? `<div class="soap-summary-item"><div class="soap-summary-title">A - 평가</div><div class="note-content">${esc(note.assessment.slice(0, 100))}${note.assessment.length > 100 ? '...' : ''}</div></div>` : ''}
+          ${note.plan ? `<div class="soap-summary-item"><div class="soap-summary-title">P - 계획</div><div class="note-content">${esc(note.plan.slice(0, 100))}${note.plan.length > 100 ? '...' : ''}</div></div>` : ''}
+        </div>
+      </div>
+    `).join('');
+    
+    notesList.innerHTML = notesHtml;
+  } catch (e) {
+    console.error(e);
+    notesList.innerHTML = '<p class="muted">노트 로드 중 오류가 발생했습니다.</p>';
+  }
+}
+
+async function deleteSoapNote(noteId) {
+  if (!confirm('정말 이 진행노트를 삭제하시겠습니까?')) return;
+  
+  try {
+    if (!_db) await initDB();
+    return new Promise((res, rej) => {
+      const tx = _db.transaction('soapNotes', 'readwrite');
+      const st = tx.objectStore('soapNotes');
+      const r = st.delete(noteId);
+      r.onsuccess = () => {
+        alert('진행노트가 삭제되었습니다.');
+        const clientName = document.getElementById('notesClientSearch').value;
+        renderNotes(clientName);
+        res(true);
+      };
+      r.onerror = () => rej(r.error);
+    });
+  } catch (e) {
+    console.error(e);
+    alert('삭제 중 오류가 발생했습니다.');
+  }
+}
+
+async function editSoapNote(noteId) {
+  try {
+    if (!_db) await initDB();
+    const note = await new Promise((res, rej) => {
+      const tx = _db.transaction('soapNotes', 'readonly');
+      const st = tx.objectStore('soapNotes');
+      const r = st.get(noteId);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    
+    if (!note) {
+      alert('노트를 찾을 수 없습니다.');
+      return;
+    }
+    
+    // SOAP 폼에 기존 내용 로드
+    document.getElementById('subjectiveText').value = note.subjective || '';
+    document.getElementById('objectiveText').value = note.objective || '';
+    document.getElementById('assessmentText').value = note.assessment || '';
+    document.getElementById('planText').value = note.plan || '';
+    
+    // 저장 버튼을 수정 모드로 변경
+    const saveBtn = document.querySelector('#soapWritePanel .btn-success');
+    saveBtn.textContent = '노트 수정';
+    saveBtn.onclick = () => updateSoapNote(noteId);
+    
+    switchSoapTab('subjective');
+    document.getElementById('soapWritePanel').scrollIntoView({ behavior: 'smooth' });
+    
+  } catch (e) {
+    console.error(e);
+    alert('노트 로드 중 오류가 발생했습니다.');
+  }
+}
+
+async function updateSoapNote(noteId) {
+  const subjective = document.getElementById('subjectiveText').value.trim();
+  const objective = document.getElementById('objectiveText').value.trim();
+  const assessment = document.getElementById('assessmentText').value.trim();
+  const plan = document.getElementById('planText').value.trim();
+  
+  if (!subjective && !objective && !assessment && !plan) {
+    alert('최소 한 개 항목은 입력해주세요.');
+    return;
+  }
+  
+  try {
+    if (!_db) await initDB();
+    
+    // 기존 노트 가져와서 업데이트
+    const existingNote = await new Promise((res, rej) => {
+      const tx = _db.transaction('soapNotes', 'readonly');
+      const st = tx.objectStore('soapNotes');
+      const r = st.get(noteId);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    
+    const updatedNote = {
+      ...existingNote,
+      subjective,
+      objective,
+      assessment,
+      plan,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await new Promise((res, rej) => {
+      const tx = _db.transaction('soapNotes', 'readwrite');
+      const st = tx.objectStore('soapNotes');
+      const r = st.put(updatedNote);
+      r.onsuccess = () => res(true);
+      r.onerror = () => rej(r.error);
+    });
+    
+    alert('진행노트가 수정되었습니다.');
+    
+    // 저장 버튼을 원래 상태로 복원
+    const saveBtn = document.querySelector('#soapWritePanel .btn-success');
+    saveBtn.textContent = '진행노트 저장';
+    saveBtn.onclick = saveSoapNoteUI;
+    
+    clearSoapForm();
+    const clientName = document.getElementById('notesClientSearch').value;
+    renderNotes(clientName);
+    
+  } catch (e) {
+    console.error(e);
+    alert('수정 중 오류가 발생했습니다.');
+  }
+}
+
+function renderCategories(){
+  const container=document.getElementById('categoriesContainer'); if(!container) return;
+  container.innerHTML='';
+  categories.forEach((cat,ci)=>{
+    const wrap=document.createElement('div'); wrap.className='category';
+    wrap.innerHTML=`
+      <div class="category-header" style="background:linear-gradient(135deg,${cat.color} 0%,${adjustColor(cat.color,-20)} 100%)">${esc(cat.name)}</div>
+      <div class="questions">
+        ${cat.questions.map((q,qi)=>`
+          <fieldset class="question">
+            <legend class="question-text">${esc(q)}</legend>
+            <div class="rating-scale" data-ci="${ci}" data-qi="${qi}">
+              ${[1,2,3,4,5].map(v=>`
+                <label class="rating-option">
+                  <input type="radio" name="q${ci}_${qi}" value="${v}" onchange="handleRatingChange(this)"/>
+                  <span>${v}</span>
+                </label>
+              `).join('')}
+            </div>
+            <div class="rating-guide"><span>1 전혀 아님</span><span>2 거의 안 함</span><span>3 가끔</span><span>4 자주</span><span>5 매우 그럼</span></div>
+          </fieldset>
+        `).join('')}
+      </div>
+      <div class="category-score" id="score_${ci}">카테고리 점수: 0/${MAX_PER_CAT}</div>
+    `;
+    container.appendChild(wrap);
+  });
+}
+
+function handleRatingChange(input){
+  const parent=input.closest('.rating-scale'); if(!parent) return;
+  parent.querySelectorAll('.rating-option').forEach(o=>o.classList.remove('selected'));
+  input.closest('.rating-option').classList.add('selected');
+  const ci=+parent.dataset.ci;
+  updateCategoryScore(ci); updateProgress(); updateResults();
+}
+
+function updateCategoryScore(ci){
+  let s=0; for(let qi=0;qi<QUESTIONS_PER_CAT;qi++){const el=document.querySelector(`input[name="q${ci}_${qi}"]:checked`); s+=parseInt(el?.value||'0',10);}
+  const el=document.getElementById(`score_${ci}`); if(el) el.textContent=`카테고리 점수: ${s}/${MAX_PER_CAT}`;
+}
+
+function updateProgress(){
+  const answered=document.querySelectorAll('.rating-scale input:checked').length;
+  const totalQ=categories.length*QUESTIONS_PER_CAT;
+  const pct=Math.round((answered/totalQ)*100);
+  const fill=document.getElementById('progressFill'); const text=document.getElementById('progressText');
+  if(fill) fill.style.width=pct+'%'; if(text) text.textContent=`응답률 ${pct}%`; updateFloatingProgress(pct);
+}
+
+function computeScores(){
+  const scores=categories.map((_,ci)=>{let s=0; for(let qi=0;qi<QUESTIONS_PER_CAT;qi++){const el=document.querySelector(`input[name="q${ci}_${qi}"]:checked`); s+=Math.min(5,Math.max(0,parseInt(el?.value||'0',10)));} return s;});
+  const total=scores.reduce((a,b)=>a+b,0); return {scores,total};
+}
+
+function updateResults(){ 
+  const {scores,total}=computeScores(); 
+  refreshBaselineOptions().catch(()=>{});
+  const totalEl=document.getElementById('finalTotalScore'); 
+  if(totalEl) totalEl.textContent=`${total}/300`;
+  renderRadarChart(scores); 
+  renderScoreCards(scores); 
+  renderClientDetails();
+}
+
+function renderRadarChart(scores){
+  const cvs=document.getElementById('radarChart'); if(!cvs||typeof Chart==='undefined') return;
+  if(radarChart) radarChart.destroy();
+  radarChart=new Chart(cvs.getContext('2d'),{
+    type:'radar',
+    data:{labels:categories.map(c=>c.shortLabel||c.name.split(' ')[0]),datasets:[{label:'웰니스 점수',data:scores,backgroundColor:'rgba(79,172,254,.18)',borderColor:'rgba(79,172,254,1)',borderWidth:2,pointRadius:4,pointBackgroundColor:'rgba(79,172,254,1)',pointBorderColor:'#fff',pointBorderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{r:{beginAtZero:true,max:MAX_PER_CAT,ticks:{stepSize:5,font:{size:10}},pointLabels:{font:{size:11}}}},plugins:{legend:{display:false}}}
+  });
+}
+
+let baselineScores = null;
+let baselineTotal = null;
+
+async function refreshBaselineOptions(){
+  const sel = document.getElementById('baselineSelect'); if(!sel) return;
+  const name = document.getElementById('clientName')?.value.trim();
+  if(!currentCoach || !name){ sel.innerHTML = '<option value="">기준 없음</option>'; return; }
+  const rows = await fetchRecords(currentCoach.name, name);
+  const opts = ['<option value="">기준 없음</option>'].concat(rows.map(r=>`<option value="${r.date}">${new Date(r.date).toLocaleDateString('ko-KR')}</option>`));
+  sel.innerHTML = opts.join('');
+}
+
+async function applyBaseline(iso){
+  if(!iso){ baselineScores=null; baselineTotal=null; renderScoreCards(computeScores().scores); return; }
+  const name = document.getElementById('clientName')?.value.trim();
+  const rows = await fetchRecords(currentCoach.name, name);
+  const found = rows.find(r=>r.date===iso); 
+  baselineScores = found?.scores||null; 
+  baselineTotal = found?.totalScore||null;
+  renderScoreCards(computeScores().scores);
+}
+
+function renderScoreCards(scores){
+  const wrap=document.getElementById('scoresList'); if(!wrap) return; wrap.innerHTML='';
+  categories.forEach((cat,i)=>{
+    const pct=Math.round((scores[i]/MAX_PER_CAT)*100); 
+    const card=document.createElement('div'); card.className='score-card'; 
+    const delta=(baselineScores? (scores[i] - (baselineScores[i]||0)) : null); 
+    const deltaTag = (delta===null? '' : ` <small class="muted">(${delta>=0?'+':''}${delta})</small>`); 
+    card.innerHTML=`
+      <div class="score-header"><div class="score-title">${esc(cat.name)}</div><div class="score-number">${scores[i]}${deltaTag}</div></div>
+      <div class="score-bar"><div class="score-fill" style="width:${pct}%;background:${cat.color}"></div></div>`;
+      wrap.appendChild(card);
+  });
+}
+
+function renderClientDetails(){
+  const box=document.getElementById('clientDetails'); if(!box) return;
+  const date=document.getElementById('measurementDate')?.value?new Date(document.getElementById('measurementDate').value):new Date();
+  const displayDate=date.toLocaleDateString('ko-KR');
+  const clientName=document.getElementById('clientName')?.value||'N/A';
+  const gender=document.getElementById('gender')?.value||'N/A';
+  const age=document.getElementById('age')?.value;
+  const rhr=document.getElementById('rhr')?.value;
+  const height=document.getElementById('heightCm')?.value;
+  const weight=document.getElementById('weightKg')?.value;
+  let bmiText='N/A'; if(height&&weight){const m=parseFloat(height)/100;const kg=parseFloat(weight);const bmi=(kg/(m*m)).toFixed(1);bmiText=`${bmi} kg/m²`;}
+  box.innerHTML=`
+    <div class="detail"><strong>측정일</strong><span>${esc(displayDate)}</span></div>
+    <div class="detail"><strong>고객</strong><span>${esc(clientName)}</span></div>
+    <div class="detail"><strong>성별</strong><span>${esc(gender)}</span></div>
+    <div class="detail"><strong>나이</strong><span>${age?esc(age+'세'):'N/A'}</span></div>
+    <div class="detail"><strong>신장/체중</strong><span>${height||'N/A'} cm / ${weight||'N/A'} kg</span></div>
+    <div class="detail"><strong>BMI</strong><span>${bmiText}</span></div>
+    <div class="detail"><strong>안정시 심박수</strong><span>${rhr?rhr+' bpm':'N/A'}</span></div>
+    <div class="detail"><strong>메모</strong><span>${esc((document.getElementById('goalMemo')?.value)||(document.getElementById('goalNote')?.value)||'N/A')}</span></div>
+    <div class="detail"><strong>코치</strong><span>${esc(currentCoach?.name||'N/A')}</span></div>`;
+}
+
+async function handleClientTyping(val){
+  // datalist 제어
+  const dl = document.getElementById('clientSuggestions');
+  if(!dl) return;
+
+  // 코치별 클라이언트 목록
+  const list = await fetchClientsByCoach(currentCoach?.name || '');
+  const q = (val || '').trim().toLowerCase();
+
+  // 자동완성 후보 구성
+  const filtered = list
+    .filter(c => !q || (c.clientName || '').toLowerCase().includes(q))
+    .slice(0, 20);
+
+  dl.innerHTML = filtered.map(c => `<option value="${esc(c.clientName)}"></option>`).join('');
+
+  // 정확히 일치하는 이름이면 상세값 채움
+  const pick = list.find(c => (c.clientName || '') === (val || '').trim());
+  if (pick){
+    const set = (id, v)=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      // 사용자가 직접 입력 중인 필드는 건드리지 않음
+      if (el === document.activeElement) return;
+      el.value = v ?? '';
+    };
+
+    set('memberNumber', pick.memberNumber);
+    set('gender', pick.gender);
+    set('age', pick.age);
+    set('phone', pick.phone);
+    set('heightCm', pick.heightCm);
+    // ⬇️ 추가: 체중/안정시심박도 자동 채움
+    set('weightKg', pick.weightKg);
+    set('rhr', pick.rhr);
+
+    // 결과( BMI, Zone 등 ) 재계산/표시
+    if (typeof updateResults === 'function') updateResults();
+  }
+}
+
+function normalizeName(n){return (n||'').toString().trim().toLowerCase().replace(/\s+/g,'').normalize('NFKC');}
+function levenshtein(a,b){
+  a=a||''; b=b||'';
+  const m=Array(b.length+1).fill(0).map((_,i)=>[i]);
+  for(let j=0;j<=b.length;j++) m[0][j]=j;
+  for(let i=1;i<=a.length;i++){
+    for(let j=1;j<=b.length;j++){
+      const cost=a[i-1]===b[j-1]?0:1;
+      m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+cost);
+    }
+  }
+  return m[a.length][b.length];
+}
+
+
+async function loadLastNoteForClient(name){
+  try{
+    if(!currentCoach || !name) return;
+    const rows = await fetchRecords(currentCoach.name, name);
+    if(!rows || !rows.length) return;
+    const last = rows[rows.length - 1];
+    const ta = document.getElementById('goalMemo');
+    if(ta && !ta.value){ ta.value = last.note || ''; }
+  }catch(e){ /* noop */ }
+}
+
+// ========================
+// 진행상황(추이)
+// ========================
+let progressRangeDays = null;
+let currentProgressClient = '';
+function setProgressRange(n){ progressRangeDays = n; if(currentProgressClient) renderProgress(currentProgressClient); }
+function applyRange(rows){
+  if(!progressRangeDays) return rows;
+  const cut = Date.now() - progressRangeDays*86400000;
+  return rows.filter(r=>new Date(r.date).getTime()>=cut);
+}
+function movingAvg(arr, k=3){
+  if(arr.length===0) return arr;
+  const out=[];
+  for(let i=0;i<arr.length;i++){
+    let s=0,c=0;
+    for(let j=Math.max(0,i-k+1); j<=i; j++){ s+=arr[j]; c++; }
+    out.push(Math.round(s/c));
+  }
+  return out;
+}
+
+function destroyProgressCharts(){ 
+  if(totalTrendChart){totalTrendChart.destroy(); totalTrendChart=null;} 
+  if(latestCategoryChart){latestCategoryChart.destroy(); latestCategoryChart=null;} 
+  if(miniTrendChart){miniTrendChart.destroy(); miniTrendChart=null;} 
+}
+
+async function renderProgress(name){
+  const lbl=document.getElementById('progressClientLabel');
+  const tbody=document.getElementById('historyTbody');
+  const statsBox=document.getElementById('progressStats');
+  if(!currentCoach){return;}
+  if(!name){ 
+    lbl.textContent='회원 선택 후 확인'; 
+    if(tbody) tbody.innerHTML=''; 
+    if(statsBox) statsBox.innerHTML=''; 
+    destroyProgressCharts(); 
+    return; 
+  }
+  lbl.textContent=name; 
+  currentProgressClient=name; 
+  let rows=await fetchRecords(currentCoach.name,name); 
+  rows = applyRange(rows);
+  
+  tbody.innerHTML=rows.length?rows.map(r=>`<tr><td>${new Date(r.date).toLocaleDateString('ko-KR')}</td><td>${r.totalScore}</td><td>${r.weightKg||'-'}</td><td>${r.rhr||'-'}</td><td>${(r.note||'').slice(0,30)}</td></tr>`).join(''):'<tr><td colspan="5">저장된 기록이 없습니다.</td></tr>';
+  
+  if(rows.length){
+    const first=rows[0], last=rows[rows.length-1];
+    const delta=last.totalScore-first.totalScore;
+    const count=rows.length;
+    const avg=(rows.reduce((a,b)=>a+b.totalScore,0)/count).toFixed(1);
+    statsBox.innerHTML=`
+      <div class="detail"><strong>측정 횟수</strong><span>${count}회</span></div>
+      <div class="detail"><strong>최초 점수</strong><span>${first.totalScore}</span></div>
+      <div class="detail"><strong>최신 점수</strong><span>${last.totalScore}</span></div>
+      <div class="detail"><strong>점수 변화량</strong><span>${delta>=0?`+${delta}`:delta}</span></div>
+      <div class="detail"><strong>평균 점수</strong><span>${avg}</span></div>
+      <div class="detail"><strong>마지막 측정일</strong><span>${new Date(last.date).toLocaleDateString('ko-KR')}</span></div>`;
+  }else{ 
+    statsBox.innerHTML='<div class="detail"><strong>알림</strong><span>기록 없음</span></div>'; 
+  }
+  renderTotalTrend(rows); 
+  renderLatestCategory(rows); 
+  renderMiniTrend(rows);
+}
+
+// CSV 관련 함수들
+let parsedImport = null;
+function triggerCSVImport(){ const inp=document.getElementById('csvInput'); if(inp) inp.value=''; inp?.click(); }
+function parseCSV(text){
+  const lines = text.replace(/\r\n/g,'\n').split(/\n+/).filter(Boolean);
+  const rows = [];
+  let headers = null;
+  for(let i=0;i<lines.length;i++){
+    const cols = []; let cur=''; let inQ=false;
+    const line = lines[i];
+    for(let j=0;j<line.length;j++){
+      const ch = line[j];
+      if(ch=='"'){ if(inQ && line[j+1]=='"'){ cur+='"'; j++; } else { inQ=!inQ; } }
+      else if(ch==',' && !inQ){ cols.push(cur); cur=''; }
+      else { cur+=ch; }
+    }
+    cols.push(cur);
+    if(i===0){ headers = cols; } else { rows.push(cols); }
+  }
+  return {headers, rows};
+}
+
+function handleCSVFile(file){
+  if(!file) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    const {headers, rows} = parseCSV(fr.result);
+    parsedImport = {headers, rows};
+    const prev = document.getElementById('importPreview');
+    const panel = document.getElementById('importPreviewPanel');
+    if(prev) {
+      const sample = rows.slice(0,5).map(r=>r.join(' | ')).join('<br/>');
+      prev.innerHTML = `<div class="detail"><strong>행 수</strong><span>${rows.length}</span></div>
+                        <div class="detail"><strong>헤더</strong><span>${headers.join(', ')}</span></div>
+                        <div class="detail"><strong>샘플(5)</strong><span style="white-space:pre-line">${sample}</span></div>`;
+    }
+    panel?.classList.remove('hidden');
+  };
+  fr.readAsText(file, 'utf-8');
+}
+
+function cancelImportCSV(){ 
+  parsedImport=null; 
+  document.getElementById('importPreviewPanel')?.classList.add('hidden'); 
+}
+
+async function confirmImportCSV(){
+  if(!parsedImport){ alert('가져올 데이터가 없습니다.'); return; }
+  const h = parsedImport.headers;
+  const idx = { 
+    date:h.indexOf('날짜'), coach:h.indexOf('코치'), client:h.indexOf('회원'), gender:h.indexOf('성별'),
+    age:h.indexOf('나이'), memberNumber:h.indexOf('회원번호'), phone:h.indexOf('전화'), height:h.indexOf('키(cm)'),
+    weight:h.indexOf('체중(kg)'), rhr:h.indexOf('RHR(bpm)'), total:(h.indexOf('점수')!==-1?h.indexOf('점수'):h.indexOf('이점')) 
+  };
+  const scoreIdx = h.map((x,i)=> ({x,i})).filter(o=>/^카테고리\d+/.test(o.x)).map(o=>o.i);
+  let imported=0, skipped=0;
+  
+  for(const row of parsedImport.rows){
+    const coachName = row[idx.coach]||currentCoach?.name||'';
+    if(!currentCoach || coachName!==currentCoach.name){ skipped++; continue; }
+    const rec = {
+      date: row[idx.date]? new Date(row[idx.date]).toISOString() : new Date().toISOString(),
+      coachName,
+      clientName: row[idx.client]||'',
+      gender: row[idx.gender]||'',
+      age: row[idx.age]||'',
+      memberNumber: row[idx.memberNumber]||'',
+      phone: row[idx.phone]||'',
+      heightCm: row[idx.height]||'',
+      weightKg: row[idx.weight]||'',
+      rhr: row[idx.rhr]||'',
+      scores: scoreIdx.map(i=> parseInt(row[i]||'0',10) ),
+      totalScore: parseInt(row[idx.total]||'0',10),
+      categoryScores: []
+    };
+    try{
+      await upsertClient(coachName, {clientName: rec.clientName, memberNumber:rec.memberNumber, gender:rec.gender, age:rec.age, phone:rec.phone, heightCm:rec.heightCm});
+      await saveRecord(rec);
+      imported++;
+    }catch(e){ skipped++; }
+  }
+  alert(`복원 완료: ${imported}건, 건너뜀: ${skipped}건`);
+  cancelImportCSV();
+  if(currentView==='progress' && currentProgressClient){ renderProgress(currentProgressClient); renderSparklines(); }
+}
+
+function renderTotalTrend(rows){
+  const cvs=document.getElementById('totalTrendChart'); if(!cvs||typeof Chart==='undefined') return;
+  if(totalTrendChart) totalTrendChart.destroy();
+  const labels=rows.map(r=>new Date(r.date).toLocaleDateString('ko-KR'));
+  let data=rows.map(r=>r.totalScore);
+  if(document.getElementById('ma3')?.checked){ data = movingAvg(data,3);}
+  totalTrendChart=new Chart(cvs.getContext('2d'),{type:'line',data:{labels,datasets:[{label:'점수',data,borderWidth:2,fill:false,tension:.2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:300}}}});
+}
+
+async function renderSparklines(){
+  const wrap = document.getElementById('sparklineWrap'); if(!wrap) return;
+  wrap.innerHTML = '';
+  const clients = await fetchClientsByCoach(currentCoach?.name||'');
+  for(const c of clients){
+    const recs = (await fetchRecords(currentCoach.name, c.clientName)).slice(-8);
+    const labels = recs.map(r=>new Date(r.date).toLocaleDateString('ko-KR'));
+    const data = recs.map(r=>r.totalScore);
+    const card = document.createElement('div');
+    card.className='score-card';
+    const cid = 'spark_'+Math.random().toString(36).slice(2);
+    card.innerHTML = `<div class="score-header"><div class="score-title">${c.clientName}</div><div class="score-number">${data[data.length-1]||'-'}</div></div><div style="height:80px"><canvas id="${cid}"></canvas></div>`;
+    wrap.appendChild(card);
+    const ctx = document.getElementById(cid).getContext('2d');
+    new Chart(ctx,{type:'line', data:{labels, datasets:[{data, borderWidth:2, fill:false, tension:.2}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}}}});
+  }
+}
+
+function renderLatestCategory(rows){
+  const cvs=document.getElementById('latestCategoryChart'); if(!cvs||typeof Chart==='undefined') return;
+  if(latestCategoryChart) latestCategoryChart.destroy();
+  const last=rows[rows.length-1]; 
+  const labels=categories.map(c=>c.shortLabel); 
+  const data=last?last.scores:new Array(categories.length).fill(0);
+  latestCategoryChart=new Chart(cvs.getContext('2d'),{type:'bar',data:{labels,datasets:[{label:'최신 점수',data}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:MAX_PER_CAT}}}});
+}
+
+async function renderMiniTrend(rows){
+  const cvs=document.getElementById('miniTrendChart'); if(!cvs||typeof Chart==='undefined') return;
+  if(miniTrendChart) miniTrendChart.destroy();
+  if(!rows){
+    const name=document.getElementById('clientName')?.value.trim();
+    rows = (name && currentCoach)? await fetchRecords(currentCoach.name,name) : [];
+  }
+  const lastN=rows.slice(-8);
+  const labels=lastN.map(r=>new Date(r.date).toLocaleDateString('ko-KR'));
+  const data=lastN.map(r=>r.totalScore);
+  miniTrendChart=new Chart(cvs.getContext('2d'),{type:'line',data:{labels,datasets:[{label:'점수(최근)',data,borderWidth:2,fill:false,tension:.2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:300}}}});
+}
+
+function resultNav(section){
+  const targetIds = {
+    summary: 'resultInfoPanel',
+    radar: 'resultRadarPanel',
+    categories: 'resultCategoryPanel',
+    trend: 'resultsTrendPanel'
+  };
+  const id = targetIds[section];
+  const el = document.getElementById(id);
+  if(el){ el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}
+
+async function populateProgressClientList(){
+  const list = await fetchClientsByCoach(currentCoach?.name || '');
+  const dl = document.getElementById('progressClientList');
+  if (!dl) return;
+  dl.innerHTML = list
+    .sort((a,b)=>a.clientName.localeCompare(b.clientName,'ko'))
+    .map(c=>`<option value="${c.clientName}"></option>`).join('');
+}
+
+function calcBMI(heightCm, weightKg){
+  const h = parseFloat(heightCm), w = parseFloat(weightKg);
+  if(!h || !w) return null;
+  const m = h / 100;
+  return (w / (m*m));
+}
+function bmiCategory(b){
+  if(b < 18.5) return '저체중';
+  if(b < 25) return '정상';
+  if(b < 30) return '과체중';
+  return '비만';
+}
+function renderBMI(){
+  const h = document.getElementById('heightCm')?.value;
+  const w = document.getElementById('weightKg')?.value;
+  const v = calcBMI(h,w);
+  const valEl = document.getElementById('bmiValue');
+  const catEl = document.getElementById('bmiCategory');
+  const marker = document.getElementById('bmiMarker');
+  if(!valEl || !catEl || !marker){ return; }
+  if(!v){ valEl.textContent='-'; catEl.textContent='-'; marker.style.left='0'; return; }
+  const b = Math.round(v*10)/10;
+  valEl.textContent = b.toFixed(1);
+  catEl.textContent = bmiCategory(b);
+  const px = Math.max(0, Math.min(40, b));
+  const leftPct = (px / 40) * 100;
+  marker.style.left = `calc(${leftPct}% - 1px)`;
+}
+function renderZones(){
+  const age = parseInt(document.getElementById('age')?.value||'',10);
+  const rhr = parseInt(document.getElementById('rhr')?.value||'',10);
+  const lbl = document.getElementById('mhrRhrLabel');
+  const z1 = document.getElementById('z1Range');
+  const z2 = document.getElementById('z2Range');
+  const z3 = document.getElementById('z3Range');
+  if(!lbl || !z1 || !z2 || !z3) return;
+  if(!age || !rhr){
+    lbl.textContent='-';
+    z1.textContent = z2.textContent = z3.textContent = '-';
+    return;
+  }
+  const mhr = 220 - age;
+  const hrr = mhr - rhr;
+  const zone = (lo, hi) => {
+    const a = Math.round(rhr + hrr * lo);
+    const b = Math.round(rhr + hrr * hi);
+    return `${a}—${b} bpm`;
+  };
+  lbl.textContent = `MHR ${mhr} / RHR ${rhr}`;
+  z1.textContent = zone(0.50, 0.60);
+  z2.textContent = zone(0.60, 0.70);
+  z3.textContent = zone(0.70, 0.80);
+}
+// 바인딩
+['heightCm','weightKg','age','rhr'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el){ el.addEventListener('input', ()=>{ renderBMI(); renderZones(); renderClientDetails(); }); }
+});
+setTimeout(()=>{ try{ renderBMI(); renderZones(); }catch(e){} }, 0);
+
+
+// ========================
+// CSV Export
+// ========================
+function csvEscape(v){const s=(v===undefined||v===null)?'':String(v); return '"'+s.replace(/"/g,'""')+'"';}
+function downloadCSV(filename,rows){const bom='\uFEFF'; const csv=rows.map(r=>r.join(',')).join('\r\n'); const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);}
+function buildHeader(){const cat=categories.map((c,i)=>`카테고리${i+1}:${c.shortLabel||c.name}`); return ['날짜','코치','회원','성별','나이','회원번호','전화','키(cm)','체중(kg)','RHR(bpm)','점수',...cat];}
+function buildCurrentResultRow(){const {scores,total}=computeScores(); const dateStr=(document.getElementById('measurementDate').value?new Date(document.getElementById('measurementDate').value):new Date()).toISOString().split('T')[0]; const row=[dateStr,currentCoach?.name||'',document.getElementById('clientName')?.value||'',document.getElementById('gender')?.value||'',document.getElementById('age')?.value||'',document.getElementById('memberNumber')?.value||'',document.getElementById('phone')?.value||'',document.getElementById('heightCm')?.value||'',document.getElementById('weightKg')?.value||'',document.getElementById('rhr')?.value||'',total,...scores]; return row.map(csvEscape);}
+function buildRowsFromRecords(recs){const rows=[]; for(const r of recs){const scores=(r.scores&&r.scores.length===categories.length)?r.scores:categories.map(()=>0); const row=[(r.date?new Date(r.date).toISOString().split('T')[0]:''),r.coachName||'',r.clientName||'',r.gender||'',r.age||'',r.memberNumber||'',r.phone||'',r.heightCm||'',r.weightKg||'',r.rhr||'',r.totalScore??'',...scores]; rows.push(row.map(csvEscape));} return rows;}
+
+async function exportCSVMenu(){ 
+  if(!currentCoach){alert('로그인이 필요합니다.');return;} 
+  const choice=prompt('CSV 내보내기 종류:\n1=현재 결과 1건\n2=선택 회원 히스토리\n3=코치 전체 기록'); 
+  if(!choice) return; 
+  if(choice.trim()==='1'){
+    const header=buildHeader().map(csvEscape); 
+    const row=buildCurrentResultRow(); 
+    downloadCSV(`웰니스_현재결과_${new Date().toISOString().split('T')[0]}.csv`,[header,row]);
+  } else if(choice.trim()==='2'){
+    const name=(document.getElementById('clientName')?.value||'').trim()||document.getElementById('progressClientSearch').value.trim()||document.getElementById('notesClientSearch').value.trim(); 
+    if(!name){alert('회원 이름을 먼저 입력/선택하세요.');return;} 
+    const recs=await fetchRecords(currentCoach.name,name); 
+    if(!recs.length){alert('해당 회원의 저장된 기록이 없습니다.');return;} 
+    recs.sort((a,b)=>(a.date||'').localeCompare(b.date||'')); 
+    const header=buildHeader().map(csvEscape); 
+    const rows=buildRowsFromRecords(recs); 
+    downloadCSV(`Wellness_${name}_히스토리_${new Date().toISOString().split('T')[0]}.csv`,[header,...rows]);
+  } else if(choice.trim()==='3'){
+    const recs=await fetchCoachAllRecords(currentCoach.name); 
+    if(!recs.length){alert('저장된 기록이 없습니다.');return;} 
+    recs.sort((a,b)=>{const d=(a.date||'').localeCompare(b.date||''); if(d!==0) return d; return (a.clientName||'').localeCompare(b.clientName||'');}); 
+    const header=buildHeader().map(csvEscape); 
+    const rows=buildRowsFromRecords(recs); 
+    downloadCSV(`Wellness_${currentCoach.name}_전체기록_${new Date().toISOString().split('T')[0]}.csv`,[header,...rows]);
+  } else {
+    alert('1, 2, 3 중에서 선택하세요.');
+  }
+}
+
+// ========================
+// 액션
+// ========================
+async function handleLogin(){ 
+  await initDB();
+  const name=document.getElementById('loginCoachName').value.trim();
+  const pw=document.getElementById('loginPassword').value;
+  if(!name||!pw){
+    alert('코치 이름과 비밀번호를 모두 입력해주세요.');
+    return;
+  }
+
+  const coachData = await getCoach(name);
+  if(!coachData){
+    alert('등록된 코치가 아닙니다. 먼저 "신규 코치 등록"에서 계정을 만들어 주세요.');
+    try{ document.querySelector('#loginSection details')?.setAttribute('open',''); }catch(e){}
+    updateDebugInfo('DB 연결됨','로그인 실패','코치 없음');
+    return;
+  }
+
+  const coach=await authCoach(name,pw);
+  if(coach){ 
+    currentCoach=coach; 
+    const coachLabel = document.getElementById('currentCoachName');
+    const progressCoachLabel = document.getElementById('progressCoachLabel');
+    const notesCoachLabel = document.getElementById('notesCoachLabel');
+    if(coachLabel) coachLabel.textContent=coach.name; 
+    if(progressCoachLabel) progressCoachLabel.textContent=coach.name;
+    if(notesCoachLabel) notesCoachLabel.textContent=coach.name;
+    navTo('measurement'); 
+    alert(`${coach.name} 코치님, 환영합니다!`);
+  } else {
+    alert('비밀번호가 올바르지 않습니다.');
+    updateDebugInfo('DB 연결됨','로그인 실패','잘못된 비밀번호');
+  }
+}
+
+async function handleRegister(){
+  const name=document.getElementById('registerCoachName').value.trim();
+  const pw=document.getElementById('registerPassword').value;
+  const cf=document.getElementById('confirmPassword').value;
+  if(!name||!pw||!cf){alert('모든 필드를 입력해주세요.');return;}
+  if(pw.length<4){alert('비밀번호는 4자 이상이어야 합니다.');return;}
+  if(pw!==cf){alert('비밀번호가 일치하지 않습니다.');return;}
+  try{
+    await registerCoach(name,pw); 
+    alert('코치 등록이 완료되었습니다. 로그인해주세요.'); 
+    document.getElementById('loginCoachName').value=name; 
+    document.getElementById('registerCoachName').value=''; 
+    document.getElementById('registerPassword').value=''; 
+    document.getElementById('confirmPassword').value='';
+  }catch(e){
+    alert(e.message||'등록 중 오류');
+  }
+}
+
+function resetAll(){
+  document.querySelectorAll('input[type="radio"]').forEach(r=>r.checked=false);
+  document.querySelectorAll('.rating-option').forEach(o=>o.classList.remove('selected'));
+  categories.forEach((_,i)=>{const el=document.getElementById(`score_${i}`); if(el) el.textContent=`카테고리 점수: 0/${MAX_PER_CAT}`;});
+  ['clientName','gender','age','memberNumber','phone','rhr','heightCm','weightKg'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+  updateProgress(); updateResults(); alert('모든 입력이 초기화되었습니다.');
+}
+
+function logout(){ 
+  // 1) 메모리 상태 초기화
+  currentCoach = null;
+  if (typeof destroyProgressCharts === 'function') { 
+    try { destroyProgressCharts(); } catch(e) {}
+  }
+  if (typeof clearDraft === 'function') {
+    try { clearDraft(); } catch(e) {}
+  }
+
+  // 2) 입력값 초기화 (UI/디자인은 그대로, 값만 비움)
+  const idsToClear = [
+    'clientName','memberNumber','gender','age','phone','heightCm','weightKg','rhr',
+    'goalNote','goalMemo','measurementDate',
+    'progressClientSearch','notesClientSearch'
+  ];
+  idsToClear.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.value = ''; }
+  });
+
+  // 표시 라벨 초기화(구조/스타일 보존)
+  const labelDefaults = {
+    currentCoachName:'-',
+    progressCoachLabel:'-',
+    notesCoachLabel:'-',
+    progressClientLabel:'회원 선택 후 확인',
+    notesClientLabel:'회원 선택 후 확인',
+    finalTotalScore:'0/300',
+    clientDetails:''
+  };
+  Object.entries(labelDefaults).forEach(([id, val])=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(id==='clientDetails'){ el.innerHTML = ''; } else { el.textContent = val; }
+  });
+
+  const tbody = document.getElementById('historyTbody');
+  if(tbody) tbody.innerHTML = '';
+
+  if (typeof setProgressRange === 'function') { try { setProgressRange(null); } catch(e){} }
+  if (typeof renderProgress === 'function') { try { renderProgress(''); } catch(e){} }
+
+  // 3) 로그인 화면으로 전환 (기존 CSS가 다른 UI를 숨김)
+  navTo('login'); 
+  alert('로그아웃되었습니다.');
+}
+
+async function handleSave(){
+  if(!currentCoach){alert('로그인이 필요합니다.');return;}
+  const clientName=document.getElementById('clientName').value.trim();
+  if(!clientName){alert('고객 이름을 입력하세요.');return;}
+  const {scores,total}=computeScores(); 
+  if(total===0){alert('최소 1개 이상의 문항에 응답해주세요.');return;}
+  
+  const rec={
+    date:(document.getElementById('measurementDate').value? new Date(document.getElementById('measurementDate').value):new Date()).toISOString(),
+    coachName: currentCoach.name,
+    clientName,
+    gender: document.getElementById('gender').value||'',
+    age: document.getElementById('age').value||'',
+    memberNumber: document.getElementById('memberNumber').value||'',
+    phone: document.getElementById('phone').value||'',
+    rhr: document.getElementById('rhr').value||'',
+    heightCm: document.getElementById('heightCm').value||'',
+    weightKg: document.getElementById('weightKg').value||'',
+    note: (document.getElementById('goalMemo')?.value || document.getElementById('goalNote')?.value || ''),
+    scores,
+    totalScore: total,
+    categoryScores: categories.map((c,i)=>({name:c.name,score:scores[i]}))
+  };
+  
+  try{
+    const allClients = await fetchClientsByCoach(currentCoach.name);
+    const key = normalizeName(clientName);
+    const exact = allClients.find(c=>normalizeName(c.clientName)===key);
+    if(exact && exact.clientName!==clientName){
+      if(confirm(`기존 회원 \'${exact.clientName}\' 과(와) 동일인으로 합칠까요?`)){
+        document.getElementById('clientName').value = exact.clientName;
+        rec.clientName = exact.clientName;
+      }
+    } else {
+      const similar = allClients.find(c=>levenshtein(normalizeName(c.clientName), key)<=2);
+      if(similar && similar.clientName!==clientName){
+        if(confirm(`\'${similar.clientName}\' 과(와) 이름이 유사합니다. 동일인으로 저장할까요?`)){
+          document.getElementById('clientName').value = similar.clientName;
+          rec.clientName = similar.clientName;
+        }
+      }
+    }
+    
+    await upsertClient(currentCoach.name,{
+  clientName,
+  memberNumber:rec.memberNumber,
+  gender:rec.gender,
+  age:rec.age,
+  phone:rec.phone,
+  heightCm:rec.heightCm,
+  // ⬇️ 추가: 다음 번 자동 채움에 필요
+  weightKg:rec.weightKg,
+  rhr:rec.rhr
+});
+    await saveRecord(rec);
+    alert(`${rec.clientName}님의 결과가 저장되었습니다.`);
+    try{ await clearDraft(); }catch(e){}
+  }catch(e){ 
+    console.error(e); 
+    alert('저장 중 오류가 발생했습니다.');
+  }
+}
+
+async function downloadImage(){
+  if(typeof html2canvas==='undefined'){alert('이미지 다운로드 기능을 사용할 수 없습니다.');return;}
+  const el=document.getElementById('resultsSection'); if(!el){alert('다운로드할 결과가 없습니다.');return;}
+  const canvas=await html2canvas(el,{backgroundColor:'#ffffff',scale:2,useCORS:true});
+  const link=document.createElement('a'); link.download=`Wellness_결과_${new Date().toISOString().split('T')[0]}.png`; link.href=canvas.toDataURL(); link.click();
+}
+
+async function exportData(){
+  if(!currentCoach){alert('로그인이 필요합니다.');return;}
+  const {scores,total}=computeScores();
+  const data={
+    exportDate:new Date().toISOString(),
+    coachName: currentCoach.name,
+    clientName: document.getElementById('clientName')?.value||'',
+    measurementDate: document.getElementById('measurementDate')?.value||'',
+    totalScore: total,
+    categoryScores: categories.map((c,i)=>({category:c.name,score:scores[i],maxScore:MAX_PER_CAT})),
+    clientInfo:{
+      gender:document.getElementById('gender')?.value||'',
+      age:document.getElementById('age')?.value||'',
+      memberNumber:document.getElementById('memberNumber')?.value||'',
+      phone:document.getElementById('phone')?.value||'',
+      rhr:document.getElementById('rhr')?.value||'',
+      height:document.getElementById('heightCm')?.value||'',
+      weight:document.getElementById('weightKg')?.value||''
+    }
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Wellness_데이터_${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+// ========================
+// 초기화
+// ========================
+
+// Autosave / Restore
+const AUTOSAVE_KEY = () => currentCoach ? currentCoach.name : 'anon';
+let autosaveTimer = null;
+
+function collectForm(){
+  const ratings = [];
+  for(let ci=0; ci<categories.length; ci++){
+    const arr=[];
+    for(let qi=0; qi<5; qi++){
+      const el=document.querySelector(`input[name="q${ci}_${qi}"]:checked`);
+      arr.push(el?parseInt(el.value,10):0);
+    }
+    ratings.push(arr);
+  }
+  return {
+    date: document.getElementById('measurementDate')?.value||'',
+    clientName: document.getElementById('clientName')?.value||'',
+    memberNumber: document.getElementById('memberNumber')?.value||'',
+    gender: document.getElementById('gender')?.value||'',
+    age: document.getElementById('age')?.value||'',
+    phone: document.getElementById('phone')?.value||'',
+    rhr: document.getElementById('rhr')?.value||'',
+    heightCm: document.getElementById('heightCm')?.value||'',
+    weightKg: document.getElementById('weightKg')?.value||'',
+    note: document.getElementById('goalNote')?.value||'',
+    ratings
+  };
+}
+
+function fillForm(d){
+  if(!d) return;
+  const set = (id,v)=>{const el=document.getElementById(id); if(el) el.value=v||'';}
+  set('measurementDate', d.date||'');
+  set('clientName', d.clientName||'');
+  set('memberNumber', d.memberNumber||'');
+  set('gender', d.gender||'');
+  set('age', d.age||'');
+  set('phone', d.phone||'');
+  set('rhr', d.rhr||'');
+  set('heightCm', d.heightCm||'');
+  set('weightKg', d.weightKg||'');
+  set('goalNote', d.note||'');
+  
+  for(let ci=0; ci<categories.length; ci++){
+    for(let qi=0; qi<5; qi++){
+      const val = d.ratings?.[ci]?.[qi]||0;
+      if(val){
+        const input = document.querySelector(`input[name="q${ci}_${qi}"][value="${val}"]`);
+        if(input){ input.checked=true; input.dispatchEvent(new Event('change')); }
+      }
+    }
+  }
+  updateResults();
+}
+
+async function saveDraft(){
+  if(!_db) await initDB();
+  const key = AUTOSAVE_KEY();
+  const data = collectForm();
+  return new Promise((res,rej)=>{
+    const tx=_db.transaction('drafts','readwrite');
+    const st=tx.objectStore('drafts');
+    const r=st.put({key, data, savedAt:new Date().toISOString()});
+    r.onsuccess=()=>res(true); r.onerror=()=>rej(r.error);
+  });
+}
+
+async function loadDraft(){
+  if(!_db) await initDB();
+  const key = AUTOSAVE_KEY();
+  return new Promise((res,rej)=>{
+    const tx=_db.transaction('drafts','readonly');
+    const st=tx.objectStore('drafts');
+    const r=st.get(key);
+    r.onsuccess=()=>res(r.result?.data||null); r.onerror=()=>rej(r.error);
+  });
+}
+
+async function clearDraft(){
+  if(!_db) await initDB();
+  const key = AUTOSAVE_KEY();
+  return new Promise((res,rej)=>{
+    const tx=_db.transaction('drafts','readwrite');
+    const st=tx.objectStore('drafts');
+    const r=st.delete(key);
+    r.onsuccess=()=>res(true); r.onerror=()=>rej(r.error);
+  });
+}
+
+function scheduleAutosave(){
+  if(autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(()=>{ saveDraft().catch(()=>{}); }, 800);
+}
+
+async function countCoaches(){
+  if(!_db) await initDB();
+  return new Promise((res,rej)=>{
+    const tx=_db.transaction('coaches','readonly');
+    const st=tx.objectStore('coaches');
+    const rq=st.count();
+    rq.onsuccess=()=>res(rq.result||0);
+    rq.onerror=()=>rej(rq.error);
+  });
+}
+
+async function initApp(){
+  try{
+    await initDB();
+    const today=new Date().toISOString().split('T')[0];
+    const dateInput=document.getElementById('measurementDate'); 
+    if(dateInput) dateInput.value=today;
+    renderCategories();
+    document.body.dataset.view='login';
+    navTo('login');
+    
+    countCoaches().then(n=>{ 
+      if(n===0){ 
+        document.querySelector('#loginSection details')?.setAttribute('open',''); 
+      } 
+    }).catch(()=>{});
+
+    // Autosave events
+    ['measurementDate','clientName','memberNumber','gender','age','phone','rhr','heightCm','weightKg','goalNote'].forEach(id=>{
+      const el=document.getElementById(id); 
+      if(el){ el.addEventListener('input', scheduleAutosave); }
+    });
+    
+    document.body.addEventListener('change', (e)=>{ 
+      if(e.target && e.target.type==='radio'){ scheduleAutosave(); } 
+    });
+
+    document.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter'){
+        if(currentView==='login'){
+          const ae=document.activeElement;
+          if(ae&&ae.id==='loginPassword') handleLogin();
+          else if(ae&&ae.id==='confirmPassword') handleRegister();
+        }
+      }
+    });
+
+    window.addEventListener('beforeunload',(e)=>{
+      if(currentView==='measurement'){
+        const answered=document.querySelectorAll('.rating-scale input:checked').length;
+        if(answered>0){ 
+          e.preventDefault(); 
+          e.returnValue='작성 중인 내용이 있습니다. 정말 페이지를 떠나시겠습니까?'; 
+          return e.returnValue;
+        }
+      }
+    });
+  }catch(e){
+    console.error('초기화 실패',e); 
+    alert('앱 초기화 실패: '+e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded',initApp);
+window.addEventListener('error',(e)=>{updateDebugInfo('DB 상태 불명','앱 오류',e.error?.message||'JS 오류');});
+window.addEventListener('unhandledrejection',(e)=>{updateDebugInfo('DB 상태 불명','앱 오류',e.reason?.message||'Promise 오류');});
+
+// 진행률 원형 표시 제어
+function updateFloatingProgress(pct){
+  let fp=document.getElementById('floatingProgress');
+  if(!fp&&pct>0){
+    fp=document.createElement('div');
+    fp.id='floatingProgress';
+    fp.className='floating-progress';
+    fp.innerHTML=`<div class="progress-circle"><div class="progress-number">0%</div></div><div class="progress-label">응답률</div>`;
+    document.body.appendChild(fp);
+  }
+  if(fp){
+    const circle=fp.querySelector('.progress-circle');
+    const number=fp.querySelector('.progress-number');
+    const deg=(pct/100)*360;
+    circle.style.background=`conic-gradient(#4facfe ${deg}deg,#e9ecef ${deg}deg)`;
+    number.textContent=`${pct}%`; 
+    fp.style.display=pct>0?'block':'none';
+  }
+}
+
+const showFloatingProgress=()=>{
+  const fp=document.getElementById('floatingProgress'); 
+  if(fp) fp.style.display='block';
+}
+
+const hideFloatingProgress=()=>{
+  const fp=document.getElementById('floatingProgress'); 
+  if(fp) fp.style.display='none';
+}
+
+/* ===== 결과 이미지 다운로드: 4개 패널을 한 장으로 합쳐 저장 ===== */
+async function _cap(el) {
+  return await html2canvas(el, { backgroundColor:'#ffffff', scale:2, useCORS:true });
+}
+
+async function downloadCombinedResults(panelIds = [
+  'resultRadarPanel',      // 레이더차트
+  'resultInfoPanel',       // 측정정보
+  'resultCategoryPanel',   // 카테고리별 상세점수
+  'resultsTrendPanel'      // 개인 점수 추이
+]) {
+  const [radarEl, infoEl, catEl, trendEl] = panelIds.map(id => document.getElementById(id));
+  if (!(radarEl && infoEl && catEl && trendEl)) {
+    alert('결과 패널을 찾을 수 없습니다. 패널 ID를 확인하세요.');
+    return;
+  }
+
+  // 1) 각 패널 캡처
+  const [cRadar, cInfo, cCat, cTrend] = await Promise.all([radarEl, infoEl, catEl, trendEl].map(_cap));
+
+  const gap = 24;
+
+  // 2) 행별 크기 계산
+  const row1Width  = cRadar.width + gap + cInfo.width;
+  const row1Height = Math.max(cRadar.height, cInfo.height);
+
+  const outWidth  = Math.max(row1Width, cCat.width, cTrend.width);
+  const outHeight = row1Height + gap + cCat.height + gap + cTrend.height;
+
+  // 3) 합성 캔버스
+  const out = document.createElement('canvas');
+  out.width  = outWidth;
+  out.height = outHeight;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, out.width, out.height);
+
+  // 4) 그리기 — 행마다 가운데 정렬
+  // 행 1: 레이더 | 측정정보 (좌우)
+  {
+    const startX = Math.round((outWidth - row1Width) / 2);
+    const y = 0;
+    ctx.drawImage(cRadar, startX, y);
+    ctx.drawImage(cInfo,  startX + cRadar.width + gap, y);
+  }
+
+  // 행 2: 카테고리(전체폭)
+  {
+    const startX = Math.round((outWidth - cCat.width) / 2);
+    const y = row1Height + gap;
+    ctx.drawImage(cCat, startX, y);
+  }
+
+  // 행 3: 개인 추이(전체폭)
+  {
+    const startX = Math.round((outWidth - cTrend.width) / 2);
+    const y = row1Height + gap + cCat.height + gap;
+    ctx.drawImage(cTrend, startX, y);
+  }
+
+  // 5) 다운로드
+  const a = document.createElement('a');
+  a.download = `Owellness_결과_${new Date().toISOString().slice(0,10)}.png`;
+  a.href = out.toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>
